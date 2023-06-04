@@ -1,0 +1,25 @@
+# Terraform
+.terraform
+*.tfstate
+*.tfstate.backup
+
+# Terragrunt
+.terragrunt-cache
+.terraform.lock.hcl
+
+# OS X
+.history
+.DS_Store
+scratch.txt
+.scratch/
+build_files.zip
+
+# IntelliJ
+.idea_modules
+*.iml
+*.iws
+*.ipr
+.idea/
+build/
+*/build/
+out/

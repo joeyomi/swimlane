@@ -1,0 +1,49 @@
+mongodb:
+  replicaCount: 1
+  image:
+    repository: mongo
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    cpu: 1024m
+    memory: 2048Mi
+    storage: 30Gi
+  service:
+    port: 27017
+    targetPort: 27017
+    type: ClusterIP
+  adminCredentials:
+    username: admin
+    password: admin123
+
+# FRONT END
+frontend:
+  replicaCount: 1
+  image:
+    repository: mongo-express
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 200m
+      memory: 300Mi
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  service:
+    name: frontend
+    port: 80
+    targetPort: 8081
+    type: LoadBalancer
+
+# INGRESS
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+  

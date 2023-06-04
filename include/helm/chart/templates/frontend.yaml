@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deploy-{{ include "swimlane.name" . }}
+  labels:
+    chart: {{ include "swimlane.fullname" . }}
+spec:
+  replicas: {{ .Values.mongodb.replicaCount }}
+  selector:
+    matchLabels:
+      app: "frontend"
+  template:
+    metadata:
+      labels:
+        app: "frontend"
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.frontend.service.targetPort }}
+            initialDelaySeconds:
+              {{ .Values.frontend.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.frontend.livenessProbe.periodSeconds }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret-{{ include "swimlane.name" . }}
+                  key: username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret-{{ include "swimlane.name" . }}
+                  key: password
+            - name: MONGODB_ENDPOINT
+              value: mongodb-svc-{{ include "swimlane.name" . }}:{{ .Values.mongodb.service.port }}/
+            - name: ME_CONFIG_MONGODB_URL
+              value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGODB_ENDPOINT)"
+            - name: MONGODB_URL
+              value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@$(MONGODB_ENDPOINT)"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'false'
+  name: frontend-svc-{{ include "swimlane.name" . }}
+  labels:
+    chart: {{ include "swimlane.fullname" . }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.frontend.service.port }}
+    targetPort: http
+    protocol: TCP
+  type: {{ .Values.frontend.service.type }}
+  selector:
+    app: "frontend"

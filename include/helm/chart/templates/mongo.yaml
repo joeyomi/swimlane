@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-deploy-{{ include "swimlane.name" . }}
+  labels:
+    chart: {{ include "swimlane.fullname" . }}
+spec:
+  replicas: {{ .Values.mongodb.replicaCount }}
+  selector:
+    matchLabels:
+      app: "mongodb"
+  template:
+    metadata:
+      labels:
+        app: "mongodb"
+    spec:
+      containers:
+        - name: mongodb
+          image: "{{ .Values.mongodb.image.repository }}:{{ .Values.mongodb.image.tag }}"
+          imagePullPolicy: {{ .Values.mongodb.image.pullPolicy }}
+          ports:
+            - name: mongodb
+              containerPort: {{ .Values.mongodb.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret-{{ include "swimlane.name" . }}
+                  key: username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret-{{ include "swimlane.name" . }}
+                  key: password
+          resources:
+            requests:
+              cpu: {{ .Values.mongodb.resources.cpu }}
+              memory: {{ .Values.mongodb.resources.memory }} 
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
+      volumes:
+        - name: mongo-data
+          persistentVolumeClaim:
+            claimName: mongodb-pvc-{{ include "swimlane.name" . }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-secret-{{ include "swimlane.name" . }}
+  labels:
+    chart: {{ include "swimlane.fullname" . }}
+type: Opaque
+stringData:
+  username: {{ .Values.mongodb.adminCredentials.username }}
+  password: {{ .Values.mongodb.adminCredentials.password }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc-{{ include "swimlane.name" . }}
+  labels:
+    chart: {{ include "swimlane.fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.mongodb.resources.storage }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name:  mongodb-svc-{{ include "swimlane.name" . }}
+  labels:
+    chart: {{ include "swimlane.fullname" . }}
+spec:
+  ports:
+  - name: mongodb
+    port: {{ .Values.mongodb.service.port }}
+    targetPort: mongodb
+    protocol: TCP
+  type: {{ .Values.mongodb.service.type }}
+  selector:
+    app: "mongodb"

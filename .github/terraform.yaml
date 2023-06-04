@@ -1,0 +1,53 @@
+name: "Terraform"
+
+on:
+  push:
+    branches:
+      - main
+      - '*'
+    paths:
+    - 'terraform/'
+    
+  pull_request:
+    branches:
+      - main
+    paths:
+    - 'terraform/'
+
+env:
+  TERRAFORM_VERSION: 1.2.6
+
+jobs:
+  terragrunt_plan_apply:
+    name: Terraform Plan and Apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          terraform init
+
+      - name: Terraform Plan
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          terraform plan
+
+      - name: Terraform Apply
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        run: |
+          terraform apply --auto-approve

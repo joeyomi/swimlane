@@ -1,0 +1,15 @@
+project_id = "swimlane-project"
+region     = "us-central1"
+prefix     = "swimlane"
+
+enabled-apis = [
+  "compute.googleapis.com",
+  "container.googleapis.com",
+  "cloudresourcemanager.googleapis.com",
+  "artifactregistry.googleapis.com",
+  "cloudbuild.googleapis.com",
+  "privateca.googleapis.com",
+]
+
+#dns_zone_project_id = "swimlane"
+#dns_zone_name       = "swimlane"
